@@ -33,6 +33,30 @@ const IconLink = () => (
   </svg>
 );
 
+const IconDownload = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+);
+
+const IconBookmark = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
+const IconList = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  </svg>
+);
+
 // ─── Multi-select dropdown ────────────────────────────────────────────────
 function MultiSelect({ options, value, onChange, placeholder }) {
   const [open, setOpen] = useState(false);
@@ -125,6 +149,66 @@ function fmtDateTime(iso) {
   });
 }
 
+// ─── Tableau entreprises réutilisable ─────────────────────────────────────
+function CompaniesTable({ companies }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Date</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Société</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">SIREN</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Forme juridique</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Nouvelle adresse</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Région</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">Activité</th>
+              <th className="px-4 py-3 font-semibold text-gray-600">Lien</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {companies.map((c) => (
+              <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(c.date_parution)}</td>
+                <td className="px-4 py-3 font-medium text-gray-900 max-w-xs">
+                  <div className="truncate" title={c.denomination}>{c.denomination || "—"}</div>
+                </td>
+                <td className="px-4 py-3 text-gray-500 font-mono whitespace-nowrap">{c.siren || "—"}</td>
+                <td className="px-4 py-3 text-gray-500 max-w-[140px]">
+                  <div className="truncate text-xs" title={c.forme_juridique}>{c.forme_juridique || "—"}</div>
+                </td>
+                <td className="px-4 py-3 text-gray-700 max-w-xs">
+                  <div className="truncate text-xs" title={c.adresse_complete}>
+                    {c.adresse_complete || [c.cp, c.ville].filter(Boolean).join(" ") || "—"}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{c.region || "—"}</td>
+                <td className="px-4 py-3 text-gray-500 max-w-[160px]">
+                  <div className="truncate text-xs" title={c.activite}>{c.activite || "—"}</div>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {c.lien && c.lien !== "https://www.bodacc.fr" ? (
+                    <a
+                      href={c.lien}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                    >
+                      <IconLink />
+                      BODACC
+                    </a>
+                  ) : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Composant principal ───────────────────────────────────────────────────
 export default function Dashboard() {
   const [tab, setTab] = useState("companies"); // "companies" | "logs"
@@ -159,6 +243,18 @@ export default function Dashboard() {
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // ── Listes sauvegardées ──
+  const [savedLists, setSavedLists] = useState([]);
+  const [listsLoading, setListsLoading] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveListName, setSaveListName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null); // { type, text }
+  const [activeList, setActiveList] = useState(null); // { id, name, companies, total, page, totalPages }
+  const [listPage, setListPage] = useState(1);
+  const [listLoading, setListLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
   // ── Chargement des entreprises ──
   const fetchCompanies = useCallback(async (p = 1) => {
     setLoading(true);
@@ -173,6 +269,7 @@ export default function Dashboard() {
     if (familleAvis.length) params.set("familleAvis", familleAvis.join(","));
     if (dateDebut) params.set("dateDebut", dateDebut);
     if (dateFin) params.set("dateFin", dateFin);
+
 
     try {
       const res = await fetch(`/api/companies?${params}`);
@@ -211,6 +308,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (tab === "logs") fetchLogs();
+    if (tab === "lists") fetchSavedLists();
   }, [tab]);
 
   // ── Import manuel ──
@@ -234,6 +332,130 @@ export default function Dashboard() {
       setImportMsg({ type: "error", text: `✗ Erreur réseau : ${e.message}` });
     } finally {
       setImporting(false);
+    }
+  };
+
+  // ── Helpers filtres → query string ──
+  const buildFilterParams = () => {
+    const params = new URLSearchParams();
+    if (formeJuridique.length) params.set("formeJuridique", formeJuridique.join(","));
+    if (capital) params.set("capital", capital);
+    if (descriptif) params.set("descriptif", descriptif);
+    if (motCle) params.set("motCle", motCle);
+    if (ville) params.set("ville", ville);
+    if (departement) params.set("departement", departement);
+    if (region.length) params.set("region", region.join(","));
+    if (familleAvis.length) params.set("familleAvis", familleAvis.join(","));
+    if (dateDebut) params.set("dateDebut", dateDebut);
+    if (dateFin) params.set("dateFin", dateFin);
+    return params;
+  };
+
+  // ── Export CSV ──
+  const exportCsv = async (listId = null) => {
+    setExporting(true);
+    try {
+      const params = listId ? new URLSearchParams({ listId }) : buildFilterParams();
+      const res = await fetch(`/api/export?${params}`);
+      if (!res.ok) throw new Error("Erreur lors de l'export");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = listId
+        ? `liste-${listId}-${new Date().toISOString().slice(0, 10)}.csv`
+        : `bodacc-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // ── Listes sauvegardées ──
+  const fetchSavedLists = async () => {
+    setListsLoading(true);
+    try {
+      const res = await fetch("/api/lists");
+      const data = await res.json();
+      setSavedLists(data.lists || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setListsLoading(false);
+    }
+  };
+
+  const saveCurrentList = async () => {
+    if (!saveListName.trim()) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: saveListName,
+          filters: {
+            formeJuridique,
+            capital,
+            descriptif,
+            motCle,
+            ville,
+            departement,
+            region,
+            familleAvis,
+            dateDebut,
+            dateFin,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSaveMsg({ type: "success", text: `✓ Liste "${saveListName}" sauvegardée (${data.count} entreprises).` });
+        setSaveListName("");
+        fetchSavedLists();
+        setTimeout(() => { setSaveModalOpen(false); setSaveMsg(null); }, 2000);
+      } else {
+        setSaveMsg({ type: "error", text: `✗ ${data.error}` });
+      }
+    } catch (e) {
+      setSaveMsg({ type: "error", text: `✗ Erreur réseau : ${e.message}` });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteList = async (id) => {
+    try {
+      await fetch(`/api/lists/${id}`, { method: "DELETE" });
+      setSavedLists((prev) => prev.filter((l) => l.id !== id));
+      if (activeList?.id === id) setActiveList(null);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const openList = async (listId, p = 1) => {
+    setListLoading(true);
+    try {
+      const res = await fetch(`/api/lists/${listId}?page=${p}`);
+      const data = await res.json();
+      setActiveList({
+        id: listId,
+        name: data.list?.name || "",
+        companies: data.companies || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        totalPages: data.totalPages || 1,
+      });
+      setListPage(data.page || 1);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setListLoading(false);
     }
   };
 
@@ -287,6 +509,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 border-t border-gray-100">
           {[
             { id: "companies", label: "Entreprises", icon: <IconBuilding /> },
+            { id: "lists", label: "Listes sauvegardées", icon: <IconList /> },
             { id: "logs", label: "Historique des imports", icon: <IconLog /> },
           ].map((t) => (
             <button
@@ -303,6 +526,11 @@ export default function Dashboard() {
               {t.id === "companies" && total > 0 && (
                 <span className="ml-1 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded-full">
                   {total.toLocaleString("fr-FR")}
+                </span>
+              )}
+              {t.id === "lists" && savedLists.length > 0 && (
+                <span className="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">
+                  {savedLists.length}
                 </span>
               )}
             </button>
@@ -466,86 +694,187 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* Tableau */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Date</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600">Société</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">SIREN</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600">Forme juridique</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600">Nouvelle adresse</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600">Région</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-600">Activité</th>
-                          <th className="px-4 py-3 font-semibold text-gray-600">Lien</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {companies.map((c) => (
-                          <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(c.date_parution)}</td>
-                            <td className="px-4 py-3 font-medium text-gray-900 max-w-xs">
-                              <div className="truncate" title={c.denomination}>{c.denomination || "—"}</div>
-                            </td>
-                            <td className="px-4 py-3 text-gray-500 font-mono whitespace-nowrap">{c.siren || "—"}</td>
-                            <td className="px-4 py-3 text-gray-500 max-w-[140px]">
-                              <div className="truncate text-xs" title={c.forme_juridique}>{c.forme_juridique || "—"}</div>
-                            </td>
-                            <td className="px-4 py-3 text-gray-700 max-w-xs">
-                              <div className="truncate text-xs" title={c.adresse_complete}>
-                                {c.adresse_complete || [c.cp, c.ville].filter(Boolean).join(" ") || "—"}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{c.region || "—"}</td>
-                            <td className="px-4 py-3 text-gray-500 max-w-[160px]">
-                              <div className="truncate text-xs" title={c.activite}>{c.activite || "—"}</div>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {c.lien && c.lien !== "https://www.bodacc.fr" ? (
-                                <a
-                                  href={c.lien}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
-                                >
-                                  <IconLink />
-                                  BODACC
-                                </a>
-                              ) : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <CompaniesTable companies={companies} />
+
+                {/* Barre d'actions + pagination */}
+                <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-gray-500">
+                  <span>{total.toLocaleString("fr-FR")} résultat{total > 1 ? "s" : ""}{totalPages > 1 ? ` — page ${page}/${totalPages}` : ""}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Boutons actions */}
+                    <button
+                      onClick={() => exportCsv()}
+                      disabled={exporting || total === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors text-gray-600"
+                    >
+                      <IconDownload />
+                      {exporting ? "Export…" : "Exporter CSV"}
+                    </button>
+                    <button
+                      onClick={() => { setSaveModalOpen(true); setSaveMsg(null); }}
+                      disabled={total === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-purple-300 rounded-lg hover:bg-purple-50 disabled:opacity-40 transition-colors text-purple-600"
+                    >
+                      <IconBookmark />
+                      Sauvegarder la liste
+                    </button>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <>
+                        <button
+                          onClick={() => { fetchCompanies(page - 1); }}
+                          disabled={page <= 1}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                        >
+                          ← Précédent
+                        </button>
+                        <button
+                          onClick={() => { fetchCompanies(page + 1); }}
+                          disabled={page >= totalPages}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                        >
+                          Suivant →
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                    <span>{total.toLocaleString("fr-FR")} résultats — page {page}/{totalPages}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { fetchCompanies(page - 1); }}
-                        disabled={page <= 1}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
-                      >
-                        ← Précédent
-                      </button>
-                      <button
-                        onClick={() => { fetchCompanies(page + 1); }}
-                        disabled={page >= totalPages}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
-                      >
-                        Suivant →
-                      </button>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </>
+        )}
+
+        {/* ══════════════════ ONGLET LISTES SAUVEGARDÉES ══════════════════ */}
+        {tab === "lists" && (
+          <div>
+            {activeList ? (
+              /* ── Vue détail d'une liste ── */
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveList(null)}
+                      className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                    >
+                      ← Retour aux listes
+                    </button>
+                    <h2 className="font-semibold text-gray-800">{activeList.name}</h2>
+                    <span className="text-xs text-gray-400">{activeList.total.toLocaleString("fr-FR")} entreprise{activeList.total > 1 ? "s" : ""}</span>
+                  </div>
+                  <button
+                    onClick={() => exportCsv(activeList.id)}
+                    disabled={exporting}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors text-gray-600"
+                  >
+                    <IconDownload />
+                    {exporting ? "Export…" : "Exporter CSV"}
+                  </button>
+                </div>
+                {listLoading ? (
+                  <div className="flex items-center justify-center py-16 text-gray-400">
+                    <IconRefresh spin />
+                    <span className="ml-2 text-sm">Chargement…</span>
+                  </div>
+                ) : (
+                  <>
+                    <CompaniesTable companies={activeList.companies} />
+                    {activeList.totalPages > 1 && (
+                      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                        <span>{activeList.total.toLocaleString("fr-FR")} résultats — page {activeList.page}/{activeList.totalPages}</span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openList(activeList.id, activeList.page - 1)}
+                            disabled={activeList.page <= 1}
+                            className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                          >
+                            ← Précédent
+                          </button>
+                          <button
+                            onClick={() => openList(activeList.id, activeList.page + 1)}
+                            disabled={activeList.page >= activeList.totalPages}
+                            className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                          >
+                            Suivant →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              /* ── Vue liste des listes ── */
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-800">Listes sauvegardées</h2>
+                  <button
+                    onClick={fetchSavedLists}
+                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    <IconRefresh spin={listsLoading} />
+                    Rafraîchir
+                  </button>
+                </div>
+                {listsLoading ? (
+                  <div className="flex items-center justify-center py-12 text-gray-400">
+                    <IconRefresh spin />
+                    <span className="ml-2 text-sm">Chargement…</span>
+                  </div>
+                ) : savedLists.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-3xl mb-2">📋</p>
+                    <p className="text-sm">Aucune liste sauvegardée.</p>
+                    <p className="text-xs mt-1">Utilisez le bouton "Sauvegarder la liste" dans l'onglet Entreprises.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="text-left px-5 py-3 font-semibold text-gray-600">Nom</th>
+                        <th className="text-left px-5 py-3 font-semibold text-gray-600">Entreprises</th>
+                        <th className="text-left px-5 py-3 font-semibold text-gray-600">Créée le</th>
+                        <th className="px-5 py-3 font-semibold text-gray-600 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {savedLists.map((l) => (
+                        <tr key={l.id} className="hover:bg-gray-50">
+                          <td className="px-5 py-3 font-medium text-gray-800">
+                            <button
+                              onClick={() => openList(l.id)}
+                              className="text-blue-600 hover:underline text-left"
+                            >
+                              {l.name}
+                            </button>
+                          </td>
+                          <td className="px-5 py-3 text-gray-500">{l.company_count.toLocaleString("fr-FR")}</td>
+                          <td className="px-5 py-3 text-gray-400 whitespace-nowrap">{fmtDateTime(l.created_at)}</td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => exportCsv(l.id)}
+                                disabled={exporting}
+                                title="Exporter en CSV"
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors disabled:opacity-40"
+                              >
+                                <IconDownload />
+                              </button>
+                              <button
+                                onClick={() => deleteList(l.id)}
+                                title="Supprimer la liste"
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              >
+                                <IconTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ══════════════════ ONGLET LOGS ══════════════════ */}
@@ -603,6 +932,47 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* ── Modal sauvegarder la liste ── */}
+      {saveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sauvegarder la liste</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {total.toLocaleString("fr-FR")} entreprise{total > 1 ? "s" : ""} correspondant aux filtres actuels seront sauvegardées.
+            </p>
+            <input
+              type="text"
+              placeholder="Nom de la liste…"
+              value={saveListName}
+              onChange={(e) => setSaveListName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveCurrentList(); }}
+              autoFocus
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
+            />
+            {saveMsg && (
+              <p className={`text-sm mb-3 ${saveMsg.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                {saveMsg.text}
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setSaveModalOpen(false); setSaveListName(""); setSaveMsg(null); }}
+                className="px-4 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={saveCurrentList}
+                disabled={saving || !saveListName.trim()}
+                className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white rounded-lg transition-colors"
+              >
+                {saving ? "Sauvegarde…" : "Sauvegarder"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="text-center text-xs text-gray-400 py-6">
         Source : <a href="https://bodacc-datadila.opendatasoft.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">BODACC – données ouvertes</a>

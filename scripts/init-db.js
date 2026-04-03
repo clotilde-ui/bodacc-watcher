@@ -60,6 +60,25 @@ async function init() {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_region ON companies (region)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_cp ON companies (cp)`);
 
+  // Table des listes sauvegardées
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS saved_lists (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      name         TEXT NOT NULL,
+      company_count INTEGER DEFAULT 0,
+      created_at   TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Table de liaison listes ↔ entreprises
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS saved_list_companies (
+      list_id    INTEGER NOT NULL,
+      company_id INTEGER NOT NULL,
+      PRIMARY KEY (list_id, company_id)
+    )
+  `);
+
   console.log("✅ Base de données initialisée avec succès !");
   process.exit(0);
 }
