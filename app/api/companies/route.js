@@ -26,8 +26,8 @@ export async function GET(request) {
   const args = [];
 
   if (formeJuridique) {
-    conditions.push(`forme_juridique LIKE ?`);
-    args.push(`%${formeJuridique}%`);
+    conditions.push(`forme_juridique = ?`);
+    args.push(formeJuridique);
   }
   if (capital) {
     conditions.push(`capital LIKE ?`);
@@ -54,8 +54,8 @@ export async function GET(request) {
     args.push(region);
   }
   if (familleAvis) {
-    conditions.push(`famille_avis LIKE ?`);
-    args.push(`%${familleAvis}%`);
+    conditions.push(`famille_avis = ?`);
+    args.push(familleAvis);
   }
   if (dateDebut) {
     conditions.push(`date_parution >= ?`);
@@ -82,11 +82,15 @@ export async function GET(request) {
       args: [...args, limit, offset],
     });
 
-    // Régions distinctes pour le filtre
-    const regionsRes = await db.execute(
-      `SELECT DISTINCT region FROM companies WHERE region != '' ORDER BY region`
-    );
+    // Valeurs distinctes pour les dropdowns
+    const [regionsRes, formesRes, famillesRes] = await Promise.all([
+      db.execute(`SELECT DISTINCT region FROM companies WHERE region != '' ORDER BY region`),
+      db.execute(`SELECT DISTINCT forme_juridique FROM companies WHERE forme_juridique != '' ORDER BY forme_juridique`),
+      db.execute(`SELECT DISTINCT famille_avis FROM companies WHERE famille_avis != '' ORDER BY famille_avis`),
+    ]);
     const regions = regionsRes.rows.map((r) => r.region);
+    const formesJuridiques = formesRes.rows.map((r) => r.forme_juridique);
+    const famillesAvis = famillesRes.rows.map((r) => r.famille_avis);
 
     return NextResponse.json({
       companies: dataRes.rows,
@@ -94,6 +98,8 @@ export async function GET(request) {
       page,
       totalPages: Math.ceil(total / limit),
       regions,
+      formesJuridiques,
+      famillesAvis,
     });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
