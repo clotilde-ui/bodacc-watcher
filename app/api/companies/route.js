@@ -10,9 +10,14 @@ export async function GET(request) {
   const offset = (page - 1) * limit;
 
   // Filtres
-  const search = searchParams.get("search") || "";
-  const region = searchParams.get("region") || "";
+  const formeJuridique = searchParams.get("formeJuridique") || "";
+  const capital = searchParams.get("capital") || "";
+  const descriptif = searchParams.get("descriptif") || "";
+  const motCle = searchParams.get("motCle") || "";
+  const ville = searchParams.get("ville") || "";
   const departement = searchParams.get("departement") || "";
+  const region = searchParams.get("region") || "";
+  const familleAvis = searchParams.get("familleAvis") || "";
   const dateDebut = searchParams.get("dateDebut") || "";
   const dateFin = searchParams.get("dateFin") || "";
 
@@ -20,18 +25,37 @@ export async function GET(request) {
   const conditions = [];
   const args = [];
 
-  if (search) {
-    conditions.push(`(denomination LIKE ? OR siren LIKE ? OR ville LIKE ?)`);
-    const s = `%${search}%`;
-    args.push(s, s, s);
+  if (formeJuridique) {
+    conditions.push(`forme_juridique LIKE ?`);
+    args.push(`%${formeJuridique}%`);
+  }
+  if (capital) {
+    conditions.push(`capital LIKE ?`);
+    args.push(`%${capital}%`);
+  }
+  if (descriptif) {
+    conditions.push(`descriptif LIKE ?`);
+    args.push(`%${descriptif}%`);
+  }
+  if (motCle) {
+    conditions.push(`descriptif LIKE ?`);
+    args.push(`%${motCle}%`);
+  }
+  if (ville) {
+    conditions.push(`ville LIKE ?`);
+    args.push(`%${ville}%`);
+  }
+  if (departement) {
+    conditions.push(`departement LIKE ?`);
+    args.push(`%${departement}%`);
   }
   if (region) {
     conditions.push(`region = ?`);
     args.push(region);
   }
-  if (departement) {
-    conditions.push(`departement LIKE ?`);
-    args.push(`%${departement}%`);
+  if (familleAvis) {
+    conditions.push(`famille_avis LIKE ?`);
+    args.push(`%${familleAvis}%`);
   }
   if (dateDebut) {
     conditions.push(`date_parution >= ?`);
