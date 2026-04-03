@@ -10,14 +10,14 @@ export async function GET(request) {
   const offset = (page - 1) * limit;
 
   // Filtres
-  const formeJuridique = searchParams.get("formeJuridique") || "";
+  const formesJuridiquesFilter = (searchParams.get("formeJuridique") || "").split(",").filter(Boolean);
   const capital = searchParams.get("capital") || "";
   const descriptif = searchParams.get("descriptif") || "";
   const motCle = searchParams.get("motCle") || "";
   const ville = searchParams.get("ville") || "";
   const departement = searchParams.get("departement") || "";
-  const region = searchParams.get("region") || "";
-  const familleAvis = searchParams.get("familleAvis") || "";
+  const regionsFilter = (searchParams.get("region") || "").split(",").filter(Boolean);
+  const famillesAvisFilter = (searchParams.get("familleAvis") || "").split(",").filter(Boolean);
   const dateDebut = searchParams.get("dateDebut") || "";
   const dateFin = searchParams.get("dateFin") || "";
 
@@ -25,9 +25,9 @@ export async function GET(request) {
   const conditions = [];
   const args = [];
 
-  if (formeJuridique) {
-    conditions.push(`forme_juridique = ?`);
-    args.push(formeJuridique);
+  if (formesJuridiquesFilter.length > 0) {
+    conditions.push(`forme_juridique IN (${formesJuridiquesFilter.map(() => "?").join(",")})`);
+    args.push(...formesJuridiquesFilter);
   }
   if (capital) {
     conditions.push(`capital LIKE ?`);
@@ -49,13 +49,13 @@ export async function GET(request) {
     conditions.push(`departement LIKE ?`);
     args.push(`%${departement}%`);
   }
-  if (region) {
-    conditions.push(`region = ?`);
-    args.push(region);
+  if (regionsFilter.length > 0) {
+    conditions.push(`region IN (${regionsFilter.map(() => "?").join(",")})`);
+    args.push(...regionsFilter);
   }
-  if (familleAvis) {
-    conditions.push(`famille_avis = ?`);
-    args.push(familleAvis);
+  if (famillesAvisFilter.length > 0) {
+    conditions.push(`famille_avis IN (${famillesAvisFilter.map(() => "?").join(",")})`);
+    args.push(...famillesAvisFilter);
   }
   if (dateDebut) {
     conditions.push(`date_parution >= ?`);
