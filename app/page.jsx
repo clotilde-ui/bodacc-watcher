@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── Icônes SVG légères ────────────────────────────────────────────────────
 const IconRefresh = ({ spin }) => (
@@ -32,6 +32,62 @@ const IconLink = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
   </svg>
 );
+
+// ─── Multi-select dropdown ────────────────────────────────────────────────
+function MultiSelect({ options, value, onChange, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const toggle = (val) => {
+    onChange(value.includes(val) ? value.filter((v) => v !== val) : [...value, val]);
+  };
+
+  const label =
+    value.length === 0 ? placeholder :
+    value.length === 1 ? value[0] :
+    `${value.length} sélectionnés`;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+      >
+        <span className={`truncate ${value.length === 0 ? "text-gray-400" : "text-gray-900"}`}>{label}</span>
+        <svg className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          {options.length === 0 && (
+            <p className="px-3 py-2 text-xs text-gray-400">Aucune option</p>
+          )}
+          {options.map((opt) => (
+            <label key={opt} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={value.includes(opt)}
+                onChange={() => toggle(opt)}
+                className="rounded text-blue-600 focus:ring-blue-500"
+              />
+              <span className="truncate">{opt}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Badge statut import ───────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -84,14 +140,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
 
   // ── Filtres ──
-  const [formeJuridique, setFormeJuridique] = useState("");
+  const [formeJuridique, setFormeJuridique] = useState([]);
   const [capital, setCapital] = useState("");
   const [descriptif, setDescriptif] = useState("");
   const [motCle, setMotCle] = useState("");
   const [ville, setVille] = useState("");
   const [departement, setDepartement] = useState("");
-  const [region, setRegion] = useState("");
-  const [familleAvis, setFamilleAvis] = useState("");
+  const [region, setRegion] = useState([]);
+  const [familleAvis, setFamilleAvis] = useState([]);
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
 
@@ -107,14 +163,14 @@ export default function Dashboard() {
   const fetchCompanies = useCallback(async (p = 1) => {
     setLoading(true);
     const params = new URLSearchParams({ page: p });
-    if (formeJuridique) params.set("formeJuridique", formeJuridique);
+    if (formeJuridique.length) params.set("formeJuridique", formeJuridique.join(","));
     if (capital) params.set("capital", capital);
     if (descriptif) params.set("descriptif", descriptif);
     if (motCle) params.set("motCle", motCle);
     if (ville) params.set("ville", ville);
     if (departement) params.set("departement", departement);
-    if (region) params.set("region", region);
-    if (familleAvis) params.set("familleAvis", familleAvis);
+    if (region.length) params.set("region", region.join(","));
+    if (familleAvis.length) params.set("familleAvis", familleAvis.join(","));
     if (dateDebut) params.set("dateDebut", dateDebut);
     if (dateFin) params.set("dateFin", dateFin);
 
@@ -187,14 +243,14 @@ export default function Dashboard() {
   };
 
   const resetFilters = () => {
-    setFormeJuridique("");
+    setFormeJuridique([]);
     setCapital("");
     setDescriptif("");
     setMotCle("");
     setVille("");
     setDepartement("");
-    setRegion("");
-    setFamilleAvis("");
+    setRegion([]);
+    setFamilleAvis([]);
     setDateDebut("");
     setDateFin("");
     setTimeout(() => fetchCompanies(1), 0);
@@ -264,16 +320,12 @@ export default function Dashboard() {
                 {/* Forme juridique */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Forme juridique</label>
-                  <select
+                  <MultiSelect
+                    options={formesJuridiques}
                     value={formeJuridique}
-                    onChange={(e) => setFormeJuridique(e.target.value)}
-                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Toutes</option>
-                    {formesJuridiques.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
+                    onChange={setFormeJuridique}
+                    placeholder="Toutes"
+                  />
                 </div>
 
                 {/* Capital */}
@@ -339,31 +391,23 @@ export default function Dashboard() {
                 {/* Région */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Région</label>
-                  <select
+                  <MultiSelect
+                    options={regions}
                     value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Toutes les régions</option>
-                    {regions.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
+                    onChange={setRegion}
+                    placeholder="Toutes les régions"
+                  />
                 </div>
 
                 {/* Famille avis */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Famille avis</label>
-                  <select
+                  <MultiSelect
+                    options={famillesAvis}
                     value={familleAvis}
-                    onChange={(e) => setFamilleAvis(e.target.value)}
-                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Toutes</option>
-                    {famillesAvis.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
+                    onChange={setFamilleAvis}
+                    placeholder="Toutes"
+                  />
                 </div>
 
                 {/* Date parution début */}
