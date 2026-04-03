@@ -83,11 +83,9 @@ export async function GET(request) {
     });
 
     // Valeurs distinctes pour les dropdowns
-    const [regionsRes, formesRes, famillesRes] = await Promise.all([
-      db.execute(`SELECT DISTINCT region FROM companies WHERE region != '' ORDER BY region`),
-      db.execute(`SELECT DISTINCT forme_juridique FROM companies WHERE forme_juridique != '' ORDER BY forme_juridique`),
-      db.execute(`SELECT DISTINCT famille_avis FROM companies WHERE famille_avis != '' ORDER BY famille_avis`),
-    ]);
+    const regionsRes = await db.execute(`SELECT DISTINCT region FROM companies WHERE region != '' ORDER BY region`);
+    const formesRes = await db.execute(`SELECT DISTINCT forme_juridique FROM companies WHERE forme_juridique != '' ORDER BY forme_juridique`);
+    const famillesRes = await db.execute(`SELECT DISTINCT famille_avis FROM companies WHERE famille_avis != '' ORDER BY famille_avis`);
     const regions = regionsRes.rows.map((r) => r.region);
     const formesJuridiques = formesRes.rows.map((r) => r.forme_juridique);
     const famillesAvis = famillesRes.rows.map((r) => r.famille_avis);
