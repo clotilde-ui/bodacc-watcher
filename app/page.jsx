@@ -82,8 +82,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
 
   // ── Filtres ──
-  const [search, setSearch] = useState("");
+  const [formeJuridique, setFormeJuridique] = useState("");
+  const [capital, setCapital] = useState("");
+  const [descriptif, setDescriptif] = useState("");
+  const [motCle, setMotCle] = useState("");
+  const [ville, setVille] = useState("");
+  const [departement, setDepartement] = useState("");
   const [region, setRegion] = useState("");
+  const [familleAvis, setFamilleAvis] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
 
@@ -99,8 +105,14 @@ export default function Dashboard() {
   const fetchCompanies = useCallback(async (p = 1) => {
     setLoading(true);
     const params = new URLSearchParams({ page: p });
-    if (search) params.set("search", search);
+    if (formeJuridique) params.set("formeJuridique", formeJuridique);
+    if (capital) params.set("capital", capital);
+    if (descriptif) params.set("descriptif", descriptif);
+    if (motCle) params.set("motCle", motCle);
+    if (ville) params.set("ville", ville);
+    if (departement) params.set("departement", departement);
     if (region) params.set("region", region);
+    if (familleAvis) params.set("familleAvis", familleAvis);
     if (dateDebut) params.set("dateDebut", dateDebut);
     if (dateFin) params.set("dateFin", dateFin);
 
@@ -117,7 +129,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [search, region, dateDebut, dateFin]);
+  }, [formeJuridique, capital, descriptif, motCle, ville, departement, region, familleAvis, dateDebut, dateFin]);
 
   // ── Chargement des logs ──
   const fetchLogs = async () => {
@@ -171,8 +183,14 @@ export default function Dashboard() {
   };
 
   const resetFilters = () => {
-    setSearch("");
+    setFormeJuridique("");
+    setCapital("");
+    setDescriptif("");
+    setMotCle("");
+    setVille("");
+    setDepartement("");
     setRegion("");
+    setFamilleAvis("");
     setDateDebut("");
     setDateFin("");
     setTimeout(() => fetchCompanies(1), 0);
@@ -238,53 +256,130 @@ export default function Dashboard() {
           <>
             {/* Filtres */}
             <form onSubmit={handleSearch} className="bg-white rounded-xl border border-gray-200 p-4 mb-5 shadow-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* Recherche texte */}
-                <div className="relative sm:col-span-2 lg:col-span-1">
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <IconSearch />
-                  </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {/* Forme juridique */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Forme juridique</label>
                   <input
                     type="text"
-                    placeholder="Société, SIREN, ville…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="SAS, SARL, SA…"
+                    value={formeJuridique}
+                    onChange={(e) => setFormeJuridique(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Capital */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Capital</label>
+                  <input
+                    type="text"
+                    placeholder="ex. 10 000"
+                    value={capital}
+                    onChange={(e) => setCapital(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Descriptif */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Descriptif</label>
+                  <input
+                    type="text"
+                    placeholder="Mot clé dans le descriptif"
+                    value={descriptif}
+                    onChange={(e) => setDescriptif(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Modif – mot clé */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Modif – mot clé</label>
+                  <input
+                    type="text"
+                    placeholder="ex. transfert, siège…"
+                    value={motCle}
+                    onChange={(e) => setMotCle(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Ville */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Ville</label>
+                  <input
+                    type="text"
+                    placeholder="Paris, Lyon…"
+                    value={ville}
+                    onChange={(e) => setVille(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Département */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Département</label>
+                  <input
+                    type="text"
+                    placeholder="Seine-Saint-Denis…"
+                    value={departement}
+                    onChange={(e) => setDepartement(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 {/* Région */}
-                <select
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                  className="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Toutes les régions</option>
-                  {regions.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Région</label>
+                  <select
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Toutes les régions</option>
+                    {regions.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
 
-                {/* Dates */}
-                <div className="flex gap-2">
+                {/* Famille avis */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Famille avis</label>
+                  <input
+                    type="text"
+                    placeholder="Modifications diverses…"
+                    value={familleAvis}
+                    onChange={(e) => setFamilleAvis(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Date parution début */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Date parution (début)</label>
                   <input
                     type="date"
                     value={dateDebut}
                     onChange={(e) => setDateDebut(e.target.value)}
-                    title="Date de début"
-                    className="flex-1 py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                {/* Date parution fin */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Date parution (fin)</label>
                   <input
                     type="date"
                     value={dateFin}
                     onChange={(e) => setDateFin(e.target.value)}
-                    title="Date de fin"
-                    className="flex-1 py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 {/* Boutons */}
-                <div className="flex gap-2">
+                <div className="flex items-end gap-2 col-span-2">
                   <button
                     type="submit"
                     className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
