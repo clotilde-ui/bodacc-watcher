@@ -1,6 +1,7 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 
 export async function GET(request) {
+  await ensureSchema();
   const db = getDb();
   const { searchParams } = new URL(request.url);
 

@@ -1,10 +1,11 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 import { importerBodacc } from "@/lib/bodacc";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60; // Vercel : max 60s pour les fonctions
 
 export async function POST(request) {
+  await ensureSchema();
   const db = getDb();
 
   // Créer un log "en cours"
