@@ -57,6 +57,12 @@ const IconList = () => (
   </svg>
 );
 
+const IconLinkedIn = () => (
+  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
 // ─── Multi-select dropdown ────────────────────────────────────────────────
 function MultiSelect({ options, value, onChange, placeholder }) {
   const [open, setOpen] = useState(false);
@@ -151,6 +157,30 @@ function fmtDateTime(iso) {
 
 // ─── Tableau entreprises réutilisable ─────────────────────────────────────
 function CompaniesTable({ companies }) {
+  // Enrichissement : état local pour ne pas re-fetch tout le tableau
+  const [enriching, setEnriching] = useState(new Set());
+  const [linkedinOverrides, setLinkedinOverrides] = useState({}); // { [id]: url | null }
+
+  const handleEnrich = async (company) => {
+    setEnriching((prev) => new Set(prev).add(company.id));
+    try {
+      const res = await fetch(`/api/enrich/${company.id}`, { method: "POST" });
+      const data = await res.json();
+      setLinkedinOverrides((prev) => ({
+        ...prev,
+        [company.id]: data.error ? "error" : (data.linkedin_url ?? "not_found"),
+      }));
+    } catch {
+      setLinkedinOverrides((prev) => ({ ...prev, [company.id]: "error" }));
+    } finally {
+      setEnriching((prev) => {
+        const next = new Set(prev);
+        next.delete(company.id);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -164,44 +194,84 @@ function CompaniesTable({ companies }) {
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Nouvelle adresse</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Région</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Activité</th>
-              <th className="px-4 py-3 font-semibold text-gray-600">Lien</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 text-center">LinkedIn</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 text-center">BODACC</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {companies.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(c.date_parution)}</td>
-                <td className="px-4 py-3 font-medium text-gray-900 max-w-xs">
-                  <div className="truncate" title={c.denomination}>{c.denomination || "—"}</div>
-                </td>
-                <td className="px-4 py-3 text-gray-500 font-mono whitespace-nowrap">{c.siren || "—"}</td>
-                <td className="px-4 py-3 text-gray-500 max-w-[140px]">
-                  <div className="truncate text-xs" title={c.forme_juridique}>{c.forme_juridique || "—"}</div>
-                </td>
-                <td className="px-4 py-3 text-gray-700 max-w-xs">
-                  <div className="truncate text-xs" title={c.adresse_complete}>
-                    {c.adresse_complete || [c.cp, c.ville].filter(Boolean).join(" ") || "—"}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{c.region || "—"}</td>
-                <td className="px-4 py-3 text-gray-500 max-w-[160px]">
-                  <div className="truncate text-xs" title={c.activite}>{c.activite || "—"}</div>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  {c.lien && c.lien !== "https://www.bodacc.fr" ? (
-                    <a
-                      href={c.lien}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
-                    >
-                      <IconLink />
-                      BODACC
-                    </a>
-                  ) : "—"}
-                </td>
-              </tr>
-            ))}
+            {companies.map((c) => {
+              const linkedinVal = linkedinOverrides[c.id] !== undefined
+                ? linkedinOverrides[c.id]
+                : (c.linkedin_url || null);
+              const isEnriching = enriching.has(c.id);
+
+              return (
+                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(c.date_parution)}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900 max-w-xs">
+                    <div className="truncate" title={c.denomination}>{c.denomination || "—"}</div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 font-mono whitespace-nowrap">{c.siren || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[140px]">
+                    <div className="truncate text-xs" title={c.forme_juridique}>{c.forme_juridique || "—"}</div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 max-w-xs">
+                    <div className="truncate text-xs" title={c.adresse_complete}>
+                      {c.adresse_complete || [c.cp, c.ville].filter(Boolean).join(" ") || "—"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{c.region || "—"}</td>
+                  <td className="px-4 py-3 text-gray-500 max-w-[160px]">
+                    <div className="truncate text-xs" title={c.activite}>{c.activite || "—"}</div>
+                  </td>
+
+                  {/* Colonne LinkedIn */}
+                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                    {linkedinVal && linkedinVal !== "not_found" && linkedinVal !== "error" ? (
+                      <a
+                        href={linkedinVal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 text-xs font-medium"
+                      >
+                        <IconLinkedIn />
+                        LinkedIn
+                      </a>
+                    ) : linkedinVal === "not_found" ? (
+                      <span className="text-xs text-gray-300">—</span>
+                    ) : linkedinVal === "error" ? (
+                      <span className="text-xs text-red-400">erreur</span>
+                    ) : isEnriching ? (
+                      <IconRefresh spin />
+                    ) : c.siren ? (
+                      <button
+                        onClick={() => handleEnrich(c)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors font-medium"
+                      >
+                        Enrichir
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
+                  </td>
+
+                  {/* Colonne BODACC */}
+                  <td className="px-4 py-3 text-center">
+                    {c.lien && c.lien !== "https://www.bodacc.fr" ? (
+                      <a
+                        href={c.lien}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                      >
+                        <IconLink />
+                        BODACC
+                      </a>
+                    ) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
