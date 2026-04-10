@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
