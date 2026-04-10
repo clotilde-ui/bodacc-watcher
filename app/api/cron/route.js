@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 import { importerBodacc } from "@/lib/bodacc";
 import { NextResponse } from "next/server";
 
@@ -13,6 +13,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  await ensureSchema();
   const db = getDb();
   const startedAt = new Date().toISOString();
   let logId;

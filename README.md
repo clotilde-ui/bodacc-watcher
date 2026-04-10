@@ -96,7 +96,7 @@ npm install
 ### Étape 5 — Initialiser la base de données
 
 ```bash
-node scripts/init-db.js
+npm run db:init
 ```
 
 Vous devriez voir :
@@ -154,13 +154,17 @@ bodacc-watcher/
 │   └── api/
 │       ├── companies/route.js  ← API : liste des entreprises avec filtres
 │       ├── import/route.js     ← API : déclencher un import manuel
+│       ├── cron/route.js       ← API : point d'entrée du cron automatique
 │       ├── logs/route.js       ← API : historique des imports
-│       └── cron/route.js       ← API : point d'entrée du cron automatique
+│       ├── export/route.js     ← API : export CSV des entreprises filtrées
+│       └── lists/
+│           ├── route.js        ← API : créer / lister les listes sauvegardées
+│           └── [id]/route.js   ← API : détail et suppression d'une liste
 ├── lib/
 │   ├── db.js                 ← Connexion à la base Turso
 │   └── bodacc.js             ← Logique d'import BODACC (filtres, déduplication)
 ├── scripts/
-│   └── init-db.js            ← Script d'initialisation de la base (1 seule fois)
+│   └── init-db.mjs           ← Script d'initialisation de la base (1 seule fois)
 ├── vercel.json               ← Configuration du cron Vercel (lun-ven 8h UTC)
 ├── .env.local.example        ← Modèle des variables d'environnement
 └── .gitignore                ← Fichiers à ne pas envoyer sur GitHub

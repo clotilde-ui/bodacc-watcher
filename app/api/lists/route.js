@@ -1,8 +1,9 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 // GET /api/lists — retourne toutes les listes sauvegardées
 export async function GET() {
+  await ensureSchema();
   const db = getDb();
   try {
     const res = await db.execute(
@@ -18,6 +19,7 @@ export async function GET() {
 // Body JSON : { name, filters: { formeJuridique, capital, descriptif, motCle, ville,
 //               departement, region, familleAvis, dateDebut, dateFin } }
 export async function POST(request) {
+  await ensureSchema();
   const db = getDb();
   try {
     const body = await request.json();

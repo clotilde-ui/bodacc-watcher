@@ -1,7 +1,8 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
+  await ensureSchema();
   const db = getDb();
   const { searchParams } = new URL(request.url);
 

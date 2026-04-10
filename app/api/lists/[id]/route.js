@@ -1,8 +1,9 @@
-import { getDb } from "@/lib/db";
+import { getDb, ensureSchema } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 // GET /api/lists/[id] — entreprises d'une liste (paginées)
 export async function GET(request, { params }) {
+  await ensureSchema();
   const db = getDb();
   const { id } = await params;
   const { searchParams } = new URL(request.url);
@@ -45,6 +46,7 @@ export async function GET(request, { params }) {
 
 // DELETE /api/lists/[id] — supprime une liste (et ses liaisons)
 export async function DELETE(request, { params }) {
+  await ensureSchema();
   const db = getDb();
   const { id } = await params;
 
