@@ -168,10 +168,12 @@ function CompaniesTable({ companies }) {
       const data = await res.json();
       setLinkedinOverrides((prev) => ({
         ...prev,
-        [company.id]: data.error ? "error" : (data.linkedin_url ?? "not_found"),
+        [company.id]: data.error
+          ? { error: data.error }
+          : (data.linkedin_url ?? "not_found"),
       }));
-    } catch {
-      setLinkedinOverrides((prev) => ({ ...prev, [company.id]: "error" }));
+    } catch (e) {
+      setLinkedinOverrides((prev) => ({ ...prev, [company.id]: { error: e.message } }));
     } finally {
       setEnriching((prev) => {
         const next = new Set(prev);
@@ -200,9 +202,12 @@ function CompaniesTable({ companies }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {companies.map((c) => {
-              const linkedinVal = linkedinOverrides[c.id] !== undefined
+              const linkedinRaw = linkedinOverrides[c.id] !== undefined
                 ? linkedinOverrides[c.id]
                 : (c.linkedin_url || null);
+              // linkedinRaw peut être : null | "not_found" | "https://..." | { error: "..." }
+              const linkedinError = linkedinRaw?.error ?? null;
+              const linkedinVal = linkedinError ? null : linkedinRaw;
               const isEnriching = enriching.has(c.id);
 
               return (
@@ -227,7 +232,16 @@ function CompaniesTable({ companies }) {
 
                   {/* Colonne LinkedIn */}
                   <td className="px-4 py-3 text-center whitespace-nowrap">
-                    {linkedinVal && linkedinVal !== "not_found" && linkedinVal !== "error" ? (
+                    {isEnriching ? (
+                      <IconRefresh spin />
+                    ) : linkedinError ? (
+                      <span
+                        className="text-xs text-red-500 cursor-help underline decoration-dotted"
+                        title={linkedinError}
+                      >
+                        erreur
+                      </span>
+                    ) : linkedinVal && linkedinVal !== "not_found" ? (
                       <a
                         href={linkedinVal}
                         target="_blank"
@@ -239,10 +253,6 @@ function CompaniesTable({ companies }) {
                       </a>
                     ) : linkedinVal === "not_found" ? (
                       <span className="text-xs text-gray-300">—</span>
-                    ) : linkedinVal === "error" ? (
-                      <span className="text-xs text-red-400">erreur</span>
-                    ) : isEnriching ? (
-                      <IconRefresh spin />
                     ) : c.siren ? (
                       <button
                         onClick={() => handleEnrich(c)}
