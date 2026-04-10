@@ -27,7 +27,7 @@ export async function POST(request, { params }) {
     }
 
     // Appel à l'API Pappers
-    const url = `https://api.pappers.fr/v2/entreprise?siren=${encodeURIComponent(siren)}&_fields=lien_linkedin&api_token=${process.env.PAPPERS_API_TOKEN}`;
+    const url = `https://api.pappers.fr/v2/entreprise?siren=${encodeURIComponent(siren)}&api_token=${process.env.PAPPERS_API_TOKEN}`;
     const pappersRes = await fetch(url);
 
     if (!pappersRes.ok) {
