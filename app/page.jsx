@@ -155,6 +155,28 @@ function fmtDateTime(iso) {
   });
 }
 
+// ─── Badge score de qualification ─────────────────────────────────────────
+const SCORE_CONFIG = {
+  0: { bg: "bg-gray-100",   text: "text-gray-500",   label: "Non quali" },
+  1: { bg: "bg-orange-100", text: "text-orange-700", label: "Faible"    },
+  2: { bg: "bg-blue-100",   text: "text-blue-700",   label: "Probable"  },
+  3: { bg: "bg-green-100",  text: "text-green-700",  label: "Quali ✓"   },
+};
+
+function ScoreBadge({ score, raison }) {
+  if (score === null || score === undefined)
+    return <span className="text-xs text-gray-300">—</span>;
+  const { bg, text, label } = SCORE_CONFIG[score] ?? SCORE_CONFIG[0];
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium cursor-help ${bg} ${text}`}
+      title={raison || ""}
+    >
+      {label}
+    </span>
+  );
+}
+
 // ─── Tableau entreprises réutilisable ─────────────────────────────────────
 function CompaniesTable({ companies }) {
   // Enrichissement : état local pour ne pas re-fetch tout le tableau
@@ -196,6 +218,7 @@ function CompaniesTable({ companies }) {
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Nouvelle adresse</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Région</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Activité</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 text-center whitespace-nowrap">Score</th>
               <th className="px-4 py-3 font-semibold text-gray-600 text-center">LinkedIn</th>
               <th className="px-4 py-3 font-semibold text-gray-600 text-center">BODACC</th>
             </tr>
@@ -228,6 +251,11 @@ function CompaniesTable({ companies }) {
                   <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{c.region || "—"}</td>
                   <td className="px-4 py-3 text-gray-500 max-w-[160px]">
                     <div className="truncate text-xs" title={c.activite}>{c.activite || "—"}</div>
+                  </td>
+
+                  {/* Colonne Score */}
+                  <td className="px-4 py-3 text-center">
+                    <ScoreBadge score={c.quali_score} raison={c.quali_raison} />
                   </td>
 
                   {/* Colonne LinkedIn */}
@@ -314,6 +342,11 @@ export default function Dashboard() {
   const [familleAvis, setFamilleAvis] = useState([]);
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
+  const [qualiScoreMin, setQualiScoreMin] = useState("");
+
+  // ── Qualification ──
+  const [qualifying, setQualifying] = useState(null); // null | { total, done }
+  const qualifyingRef = useRef(false);
 
   // ── Import ──
   const [importing, setImporting] = useState(false);
@@ -349,7 +382,7 @@ export default function Dashboard() {
     if (familleAvis.length) params.set("familleAvis", familleAvis.join(","));
     if (dateDebut) params.set("dateDebut", dateDebut);
     if (dateFin) params.set("dateFin", dateFin);
-
+    if (qualiScoreMin) params.set("qualiScoreMin", qualiScoreMin);
 
     try {
       const res = await fetch(`/api/companies?${params}`);
@@ -391,6 +424,39 @@ export default function Dashboard() {
     if (tab === "lists") fetchSavedLists();
   }, [tab]);
 
+  // ── Qualification en arrière-plan ──
+  const triggerQualification = useCallback(async () => {
+    if (qualifyingRef.current) return;
+    try {
+      const res = await fetch("/api/qualify/pending");
+      const { ids } = await res.json();
+      if (!ids?.length) return;
+
+      qualifyingRef.current = true;
+      setQualifying({ total: ids.length, done: 0 });
+
+      for (let i = 0; i < ids.length; i += 20) {
+        const batch = ids.slice(i, i + 20);
+        try {
+          await fetch("/api/qualify/batch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: batch }),
+          });
+        } catch (e) {
+          console.error("Batch qualification error:", e);
+        }
+        setQualifying({ total: ids.length, done: Math.min(i + 20, ids.length) });
+      }
+    } catch (e) {
+      console.error("Qualification error:", e);
+    } finally {
+      setQualifying(null);
+      qualifyingRef.current = false;
+      fetchCompanies(1);
+    }
+  }, [fetchCompanies]);
+
   // ── Import manuel ──
   const lancerImport = async () => {
     setImporting(true);
@@ -405,6 +471,8 @@ export default function Dashboard() {
         });
         fetchCompanies(1);
         if (tab === "logs") fetchLogs();
+        // Lance la qualification en arrière-plan sans bloquer l'UI
+        triggerQualification();
       } else {
         setImportMsg({ type: "error", text: `✗ Erreur : ${data.error}` });
       }
@@ -428,6 +496,7 @@ export default function Dashboard() {
     if (familleAvis.length) params.set("familleAvis", familleAvis.join(","));
     if (dateDebut) params.set("dateDebut", dateDebut);
     if (dateFin) params.set("dateFin", dateFin);
+    if (qualiScoreMin) params.set("qualiScoreMin", qualiScoreMin);
     return params;
   };
 
@@ -555,6 +624,7 @@ export default function Dashboard() {
     setFamilleAvis([]);
     setDateDebut("");
     setDateFin("");
+    setQualiScoreMin("");
     setTimeout(() => fetchCompanies(1), 0);
   };
 
@@ -740,6 +810,21 @@ export default function Dashboard() {
                   />
                 </div>
 
+                {/* Score minimum */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Score mini</label>
+                  <select
+                    value={qualiScoreMin}
+                    onChange={(e) => setQualiScoreMin(e.target.value)}
+                    className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tous</option>
+                    <option value="1">≥ Faible (1+)</option>
+                    <option value="2">≥ Probable (2+)</option>
+                    <option value="3">Quali ✓ uniquement</option>
+                  </select>
+                </div>
+
                 {/* Boutons */}
                 <div className="flex items-end gap-2 col-span-2">
                   <button
@@ -758,6 +843,26 @@ export default function Dashboard() {
                 </div>
               </div>
             </form>
+
+            {/* Progress bar qualification */}
+            {qualifying && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-700">
+                    Qualification en cours…
+                  </span>
+                  <span className="text-sm text-blue-600">
+                    {qualifying.done}/{qualifying.total}
+                  </span>
+                </div>
+                <div className="w-full bg-blue-100 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round((qualifying.done / qualifying.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Résultats */}
             {loading ? (

@@ -21,6 +21,7 @@ export async function GET(request) {
   const famillesAvisFilter = (searchParams.get("familleAvis") || "").split(",").filter(Boolean);
   const dateDebut = searchParams.get("dateDebut") || "";
   const dateFin = searchParams.get("dateFin") || "";
+  const qualiScoreMin = searchParams.get("qualiScoreMin") || "";
 
   // Construction de la requête dynamique
   const conditions = [];
@@ -65,6 +66,10 @@ export async function GET(request) {
   if (dateFin) {
     conditions.push(`date_parution <= ?`);
     args.push(dateFin);
+  }
+  if (qualiScoreMin !== "") {
+    conditions.push(`quali_score >= ?`);
+    args.push(parseInt(qualiScoreMin, 10));
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
